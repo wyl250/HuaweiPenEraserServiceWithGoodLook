@@ -1,4 +1,5 @@
 import ctypes
+import tkinter
 import keyboard
 import threading
 import pystray
@@ -6,8 +7,7 @@ import tendo.singleton
 import os.path
 import sys
 import time
-import tkinter
-from PIL import Image, ImageTk
+from PIL import Image,ImageTk
 from ctypes import windll
 
 windll.shcore.SetProcessDpiAwareness(1)
@@ -58,24 +58,27 @@ class Pen:
             return True
         else: return False
 
-
-
-    def switch_mode(self, callback=None) -> bool:
+    def switch_mode(self, callback_1=None,callback_2=None) -> bool:
         if [self.eraser, self.pen][int(self.eraser_mode)]():
-            if callback:
-                callback(self.eraser_mode)
+            if callback_1:
+                callback_1(self.eraser_mode)
+            if callback_2:
+                callback_2(self.eraser_mode)
             return True
         else: return False
-
-
 
 def double_click_gen(pen):
     def _onhotkey():
         print("触发双击")
-        pen.switch_mode(callback=icon_change)
+        pen.switch_mode(callback_1=icon_change,callback_2=window_change)
     return _onhotkey
 
-
+def kbd_thread_gen(pen):
+    def _func():
+        double_click = double_click_gen(pen)
+        keyboard.add_hotkey('win+f19', double_click)
+        keyboard.wait()
+    return _func
 
 Pen_Icon = Image.open(os.path.join(os.path.dirname(__file__), "res", "Designcontest-Vintage-Pen.ico"))
 Eraser_Icon = Image.open(os.path.join(os.path.dirname(__file__), "res", "Designcontest-Vintage-Eraser.ico"))
@@ -90,8 +93,9 @@ def icon_change(eraser_mode: bool):
         icon.title = "笔输入模式"
 
 def stop():
-    global icon
+    global icon,root
     icon.stop()
+    root.destroy()
 
 def fixup_ink_workspace():
     global pen
@@ -107,51 +111,32 @@ menu = (pystray.MenuItem(text='修复 Windows Ink 事件监听', action=fixup_in
         pystray.MenuItem(text='退出', action=stop))
 icon = pystray.Icon("Eraser Service", menu=menu)
 
-#这里虽然名字还叫键盘线程但主要内容被我改成了生成一个窗口
-def kbd_thread_gen(pen):
-
+def window_display():
     # 创建主窗口
+    global root
     root = tkinter.Tk()
     root.tk.call('tk','scaling',244/72)
     root.overrideredirect(True)  # 隐藏窗口边框
     root.attributes('-topmost', True)  # 置顶窗口
     root.attributes('-transparentcolor', '#FEFEFE')  # 设置透明颜色
-
     # 加载图片
     image = Image.open(os.path.join(os.path.dirname(__file__), "res", "eraser.png"))
     photo = ImageTk.PhotoImage(image)
-
     # 创建标签并显示图片
     label = tkinter.Label(root, image=photo, bg='#FEFEFE')
     label.pack()
-
-
     # 设置窗口大小和位置
     root.geometry(f'{image.width}x{image.height}+{(root.winfo_screenwidth() - image.width) // 2}+{root.winfo_screenheight() // 4}')
-
-
-
-    def double_click_gen(pen):
-        print("触发双击")
-        pen.switch_mode(callback=icon_change)
-        if pen.eraser_mode:
-            root.state("normal")
-        else:
-            root.withdraw()
-            
     root.withdraw()
-    # 热键
-    keyboard.add_hotkey('win+f19',lambda:double_click_gen(pen))
-
     # 显示窗口
     root.mainloop()
 
-
-
-
-
-
-
+def window_change(eraser_mode:bool):
+    global root
+    if eraser_mode:
+        root.state("normal")
+    else:
+        root.state("withdrawn")
 
 if __name__ == "__main__":
     try:
@@ -160,11 +145,13 @@ if __name__ == "__main__":
     except Exception as e:
         ctypes.windll.user32.MessageBoxW(None, e.args[0], "错误", 0x00000010)
         sys.exit(1)
-    kbd_thread = threading.Thread(target=kbd_thread_gen, args=(pen,), daemon=True)
+    kbd_thread = threading.Thread(target=kbd_thread_gen(pen), daemon=True)
     kbd_thread.start()
     icon_change(False)
     icon_thread = threading.Thread(target=icon.run)
     icon_thread.start()
     ink_fixup_thread = threading.Thread(target=loop_ink_workspace_fixup, daemon=True)
-    ink_fixup_thread.start()
+    #ink_fixup_thread.start()
+    graph_thread = threading.Thread(target=window_display,daemon=True)
+    graph_thread.start()
     icon_thread.join()
