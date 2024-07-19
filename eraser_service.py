@@ -129,7 +129,6 @@ def window_display():
     root.withdraw()
     # 显示窗口
     root.mainloop()
-    image.close()
 
 def window_change(eraser_mode:bool):
     if eraser_mode:
@@ -151,7 +150,6 @@ if __name__ == "__main__":
     icon_thread.start()
     ink_fixup_thread = threading.Thread(target=loop_ink_workspace_fixup, daemon=True)
     ink_fixup_thread.start()
-    graph_thread = threading.Thread(target=window_display)
+    graph_thread = threading.Thread(target=window_display, daemon=True)
     graph_thread.start()
     icon_thread.join()
-    root.quit()
