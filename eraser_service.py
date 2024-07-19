@@ -93,9 +93,8 @@ def icon_change(eraser_mode: bool):
         icon.title = "笔输入模式"
 
 def stop():
-    global icon,root
+    global icon
     icon.stop()
-    root.destroy()
 
 def fixup_ink_workspace():
     global pen
@@ -130,9 +129,9 @@ def window_display():
     root.withdraw()
     # 显示窗口
     root.mainloop()
+    image.close()
 
 def window_change(eraser_mode:bool):
-    global root
     if eraser_mode:
         root.state("normal")
     else:
@@ -151,7 +150,8 @@ if __name__ == "__main__":
     icon_thread = threading.Thread(target=icon.run)
     icon_thread.start()
     ink_fixup_thread = threading.Thread(target=loop_ink_workspace_fixup, daemon=True)
-    #ink_fixup_thread.start()
-    graph_thread = threading.Thread(target=window_display,daemon=True)
+    ink_fixup_thread.start()
+    graph_thread = threading.Thread(target=window_display)
     graph_thread.start()
     icon_thread.join()
+    root.quit()
