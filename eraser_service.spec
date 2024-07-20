@@ -24,7 +24,6 @@ exe = EXE(
     name='eraser_service',
     debug=False,
     bootloader_ignore_signals=False,
-    exclude_binaries=True,
     strip=False,
     upx=True,
     upx_exclude=[],
@@ -36,11 +35,4 @@ exe = EXE(
     codesign_identity=None,
     entitlements_file=None,
     icon=['res\\Designcontest-Vintage-Eraser.ico'],
-)
-coll = COLLECT(
-    exe,
-    strip=False,
-    upx=True,
-    upx_exclude=[],
-    name='eraser_service_e',
 )
