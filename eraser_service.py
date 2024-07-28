@@ -20,7 +20,7 @@ class Pen:
 
     def __init__(self, lib_paths: str=[
                  r"C:\Program Files\Huawei\PCManager\components\accessories_center\accessories_app\AccessoryApp\Lib\Plugins\Depend\PenService.dll",
-                 r"C:\Program Files\WindowsApps\HuaweiPC.HuaweiPenAPP_1.0.1.0_x64__amfdc1pkdnmaa\HuaweiPenAPP\PenService.dll"
+                 r"C:\Program Files\WindowsApps\HuaweiPC.HuaweiPenAPP_1.0.1.0_x64__amfdc1pkdnmaa\HuaweiPenAPP\PenService.dll",
                  r"C:\Windows\PenService.dll"
                 ],
                  logger: "function"=print) -> None:
