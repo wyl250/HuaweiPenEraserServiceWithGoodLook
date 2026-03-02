@@ -1,16 +1,15 @@
 import ctypes
 import tkinter
-import keyboard
 import threading
 import pystray
 import tendo.singleton
 import os.path
 import sys
 import time
+import socket
 from PIL import Image,ImageTk
-from ctypes import windll
 
-windll.shcore.SetProcessDpiAwareness(1)
+ctypes.cdll.shcore.SetProcessDpiAwareness(1)
 me = tendo.singleton.SingleInstance("HuaweiPenEraserService")
 
 class Pen:
@@ -73,11 +72,16 @@ def double_click_gen(pen):
         pen.switch_mode(callback_1=icon_change,callback_2=window_change)
     return _onhotkey
 
-def kbd_thread_gen(pen):
+def tcp_thread_gen(pen):
     def _func():
-        double_click = double_click_gen(pen)
-        keyboard.add_hotkey('win+f19', double_click)
-        keyboard.wait()
+        double_click=double_click_gen(pen)
+        receiver = socket.socket()
+        receiver.bind(("localhost", 9356))
+        receiver.listen()
+        while True:
+            receiver.accept()
+            double_click()
+
     return _func
 
 Pen_Icon = Image.open(os.path.join(os.path.dirname(__file__), "res", "Designcontest-Vintage-Pen.ico"))
@@ -143,13 +147,13 @@ if __name__ == "__main__":
     except Exception as e:
         ctypes.windll.user32.MessageBoxW(None, e.args[0], "错误", 0x00000010)
         sys.exit(1)
-    kbd_thread = threading.Thread(target=kbd_thread_gen(pen), daemon=True)
-    kbd_thread.start()
+    tcp_thread = threading.Thread(target=tcp_thread_gen(pen), daemon=True)
+    tcp_thread.start()
     icon_change(False)
     icon_thread = threading.Thread(target=icon.run)
     icon_thread.start()
     ink_fixup_thread = threading.Thread(target=loop_ink_workspace_fixup, daemon=True)
-    ink_fixup_thread.start()
+    #ink_fixup_thread.start()
     graph_thread = threading.Thread(target=window_display, daemon=True)
     graph_thread.start()
     icon_thread.join()
